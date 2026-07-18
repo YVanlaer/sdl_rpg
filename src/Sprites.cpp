@@ -24,7 +24,7 @@ void drawCharFrame(SDL_Renderer* r, const Camera& cam, const CharDef& def,
                    Direction dir, int frame, float x, float y, float scale) {
     const int f = SDL_clamp(frame, 0, def.frames - 1);
     const int row = def.fixedRow ? def.rowBase : def.rowBase + dirRow(dir);
-    const bool flip = !def.fixedRow && dir == Direction::Right;
+    const bool flip = !def.fixedRow && dir == Direction::Left;
     const float w = def.fw * scale;
     const float h = def.fh * scale;
     SDL_FRect src{static_cast<float>(f * def.fw), static_cast<float>(row * def.fh),

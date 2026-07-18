@@ -239,7 +239,7 @@ void Game::spawnWorld() {
                                          NPC::Kind::Smith));
     npcs.push_back(std::make_unique<NPC>(
         s.merchant.x, s.merchant.y, "Grub",
-        CharDef{assets.get("merchant"), 32, 32, 12, 6, 0, true}, NPC::Kind::Merchant));
+        CharDef{assets.get("merchant"), 16 * 4, 16 * 3, 4, 6, 0, true}, NPC::Kind::Merchant));
 
     animals.clear();
     animals.push_back(

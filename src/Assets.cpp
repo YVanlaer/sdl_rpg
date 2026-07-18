@@ -116,38 +116,38 @@ SDL_Texture* Assets::get(const std::string& key) const {
 namespace spriteRects {
 
 // Sheets have white silhouette rows at the bottom — rects stop above them.
-const SDL_FRect PINE1{16 * 4, 0, 16 * 2, 16 * 3};
-const SDL_FRect PINE2{16 * 6, 0, 16 * 2, 16 * 3};
-const SDL_FRect MAPLE_GREEN{0, 46, 36, 70};
-const SDL_FRect MAPLE_ORANGE{68, 46, 30, 70};
-const SDL_FRect MAPLE_BIRCH{108, 46, 36, 70};
-const SDL_FRect TREE_BIG_GREEN{0, 144, 32, 48};
-const SDL_FRect TREE_PINK{0, 192, 32, 48};
-const SDL_FRect TREE_TEAL{64, 144, 32, 48};
+const SDL_FRect PINE1{16 * 4, 16 * 0, 16 * 2, 16 * 3};
+const SDL_FRect PINE2{16 * 6, 16 * 0, 16 * 2, 16 * 3};
+const SDL_FRect MAPLE_GREEN{16 * 0, 16 * 3, 16 * 2, 16 * 4};
+const SDL_FRect MAPLE_ORANGE{16 * 4, 16 * 3, 16 * 2, 16 * 4};
+const SDL_FRect MAPLE_BIRCH{16 * 7, 16 * 3, 16 * 2, 16 * 4};
+const SDL_FRect TREE_BIG_GREEN{16 * 0, 16 * 9, 16 * 2, 16 * 3};
+const SDL_FRect TREE_PINK{16 * 0, 16 * 12, 16 * 2, 16 * 3};
+const SDL_FRect TREE_TEAL{16 * 4, 16 * 9, 16 * 2, 16 * 3};
 
-const SDL_FRect HOUSE_SMITH{0, 0, 112, 106};
+const SDL_FRect HOUSE_SMITH{16 * 5, 16 * 0, 16 * 9, 16 * 6};
 
-const SDL_FRect WELL{0, 0, 32, 64};
-const SDL_FRect CHEST_CLOSED{6, 6, 20, 14};
-const SDL_FRect CHEST_OPEN{6, 28, 20, 14};
+const SDL_FRect WELL{16 * 0, 16 * 0, 16 * 2, 16 * 4};
+const SDL_FRect CHEST_CLOSED{16 * 0, 16 * 2, 16 * 2, 16 * 1};
+const SDL_FRect CHEST_OPEN{16 * 0, 16 * 3, 16 * 2, 16 * 1};
 
-const SDL_FRect FENCE_POST{0, 16, 16, 16};
-const SDL_FRect FENCE_H{32, 0, 16, 16};
-const SDL_FRect FENCE_CORNER{0, 0, 16, 16};
+const SDL_FRect FENCE_POST{16 * 0, 16 * 1, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_H{16 * 2, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_CORNER{16 * 0, 16 * 0, 16 * 1, 16 * 1};
 
-const SDL_FRect TORCH{0, 142, 16, 16};
+const SDL_FRect TORCH{16 * 0, 16 * 9, 16 * 1, 16 * 1};
 
-const SDL_FRect STALL_TOP{230, 66, 28, 18};
-const SDL_FRect STALL_COUNTER{230, 84, 28, 36};
+const SDL_FRect STALL_TOP{16 * 14, 16 * 4, 16 * 2, 16 * 1};
+const SDL_FRect STALL_COUNTER{16 * 14, 16 * 5, 16 * 2, 16 * 2};
 
-const SDL_FRect HEART_FULL{0, 0, 16, 16};
-const SDL_FRect HEART_HALF{32, 0, 16, 16};
-const SDL_FRect HEART_EMPTY{0, 16, 16, 16};
-const SDL_FRect COIN{0, 0, 16, 16};
+const SDL_FRect HEART_FULL{16 * 0, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect HEART_HALF{16 * 2, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect HEART_EMPTY{16 * 0, 16 * 1, 16 * 1, 16 * 1};
+const SDL_FRect COIN{16 * 0, 16 * 0, 16 * 1, 16 * 1};
 
-const SDL_FPoint STONES[8] = {{0, 0},  {16, 0},  {32, 0},  {48, 0},
-                              {0, 16}, {16, 16}, {32, 16}, {48, 16}};
-const SDL_FPoint FLOWERS[9] = {{0, 106},  {16, 106}, {32, 106}, {48, 106}, {64, 106},
-                               {0, 120},  {16, 120}, {32, 120}, {48, 120}};
+const SDL_FPoint STONES[8] = {{16 * 0, 16 * 0},  {16 * 1, 16 * 0},  {16 * 2, 16 * 0},  {16 * 3, 16 * 0},
+                              {16 * 0, 16 * 1}, {16 * 1, 16 * 1}, {16 * 2, 16 * 1}, {16 * 3, 16 * 1}};
+const SDL_FPoint FLOWERS[9] = {{16 * 0, 16 * 7},  {16 * 1, 16 * 7}, {16 * 2, 16 * 7}, {16 * 3, 16 * 7}, {16 * 4, 16 * 7},
+                               {16 * 0, 16 * 8},  {16 * 1, 16 * 8}, {16 * 2, 16 * 8}, {16 * 3, 16 * 8}};
 
 }  // namespace spriteRects
