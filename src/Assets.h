@@ -44,14 +44,14 @@ extern const SDL_FRect WELL;
 extern const SDL_FRect CHEST_CLOSED;
 extern const SDL_FRect CHEST_OPEN;
 
-extern const SDL_FRect FENCE_POST;
+extern const SDL_FRect FENCE_NW;
+extern const SDL_FRect FENCE_NE;
+extern const SDL_FRect FENCE_V;
+extern const SDL_FRect FENCE_SW;
+extern const SDL_FRect FENCE_SE;
 extern const SDL_FRect FENCE_H;
-extern const SDL_FRect FENCE_CORNER;
 
 extern const SDL_FRect TORCH;
-
-extern const SDL_FRect STALL_TOP;
-extern const SDL_FRect STALL_COUNTER;
 
 extern const SDL_FRect HEART_FULL;
 extern const SDL_FRect HEART_HALF;

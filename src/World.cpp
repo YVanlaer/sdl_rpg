@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "Autotile.h"
 #include "Util.h"
 
 namespace {
@@ -10,15 +11,45 @@ namespace {
 constexpr Uint8 G_A = 0, G_B = 1, G_C = 2, G_DIRT = 3, G_PLAZA = 4,
                 G_FOREST = 5, G_DARK = 6, G_FOREST2 = 7;
 
-const SDL_Color GROUND_COLS[] = {
-    hexColor(0x66b34e), hexColor(0x5fac49), hexColor(0x6fbc54), hexColor(0xc8a062),
-    hexColor(0xd6b37e), hexColor(0x4f9c45), hexColor(0x478f52), hexColor(0x53a249),
+/* --- autotile ground metadata ---------------------------------------------
+ * The whole ground is drawn from 3 elements of the sheet; no flat colors.
+ * Model: the base is ALWAYS grass - every tile first draws the Center piece
+ * of the G_A element. Autotiled terrains then draw their piece on top, and
+ * their transparent fringe blends into that grass base.
+ * cls = blending class (same class = no border between tiles).
+ * elemCol/elemRow = which 192x64 element of the sheet to use.
+ * autotile = false -> the grass base is the whole tile (no overlay). */
+enum GroundClass : Uint8 { CLS_GRASS, CLS_DEEP, CLS_SOIL };
+struct GroundMeta {
+    Uint8 cls;
+    Uint8 elemCol, elemRow;
+    bool autotile;
+};
+constexpr GroundMeta GROUND_META[] = {
+    /*G_A*/      {CLS_GRASS, 0, 0, false},  // base grass: Center piece only
+    /*G_B*/      {CLS_DEEP,  1, 0, true},   // deeper grass patches
+    /*G_C*/      {CLS_GRASS, 0, 0, false},  // looks like base grass
+    /*G_DIRT*/   {CLS_SOIL,  0, 2, true},   // soil (paths)
+    /*G_PLAZA*/  {CLS_SOIL,  0, 2, true},   // same soil asset as the paths
+    /*G_FOREST*/ {CLS_DEEP,  1, 0, true},   // forest floor = deeper grass
+    /*G_DARK*/   {CLS_DEEP,  1, 0, true},   // boss clearing = deeper grass
+    /*G_FOREST2*/{CLS_DEEP,  1, 0, true},
 };
 
 // deterministic hash noise (same formula as the JS version)
 double h2(double x, double y) {
     const double s = std::sin(x * 127.1 + y * 311.7) * 43758.5453;
     return s - std::floor(s);
+}
+
+// smooth value noise over h2: coherent blobs instead of per-tile static
+double vnoise(double x, double y) {
+    const int x0 = static_cast<int>(std::floor(x)), y0 = static_cast<int>(std::floor(y));
+    double fx = x - x0, fy = y - y0;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
+    const double a = h2(x0, y0), b = h2(x0 + 1, y0), c = h2(x0, y0 + 1), d = h2(x0 + 1, y0 + 1);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
 }
 
 bool inMap(int x, int y) { return x >= 0 && y >= 0 && x < MAP_W && y < MAP_H; }
@@ -28,6 +59,7 @@ bool inMap(int x, int y) { return x >= 0 && y >= 0 && x < MAP_W && y < MAP_H; }
 void World::build(const Assets& assets) {
     using namespace spriteRects;
 
+    tiles = assets.get("grassSpring");
     ground.assign(MAP_W * MAP_H, 0);
 
     const auto inForest = [](int x, int y) { return x >= 54 && x <= 114 && y >= 4 && y <= 82; };
@@ -38,8 +70,10 @@ void World::build(const Assets& assets) {
     for (int y = 0; y < MAP_H; ++y) {
         for (int x = 0; x < MAP_W; ++x) {
             const double r = h2(x, y);
-            Uint8 t = (x + y) % 2 == 0 ? G_A : G_B;
-            if (r > 0.92) t = G_C;
+            Uint8 t = G_A;
+            // patches of the second grass tone (tune size/density here)
+            if (vnoise(x * 0.12, y * 0.12) > 0.65) t = G_B;
+            if (r > 0.92) t = G_B;
             if (inForest(x, y)) t = (x + y) % 2 == 0 ? G_FOREST : G_FOREST2;
             if (inBoss(x, y)) t = G_DARK;
             if (inPlaza(x, y)) t = G_PLAZA;
@@ -113,28 +147,23 @@ void World::build(const Assets& assets) {
         const SDL_FRect c{372, 1048, 24, 18};
         addObject(assets.get("well"), &WELL, 368, 1008, 32, 64, &c);
     }
-    // merchant stall (canopy + counter) east of plaza
-    addObject(assets.get("props"), &STALL_TOP, 466, 1018, STALL_TOP.w, STALL_TOP.h, nullptr);
-    {
-        const SDL_FRect c{466, 1046, 28, 24};
-        addObject(assets.get("props"), &STALL_COUNTER, 466, 1036, 28, 36, &c);
-    }
 
     // chicken pen: fence rectangle tiles (9..15, 74..79), gate on east
     const struct { int x0, y0, x1, y1; } pen{9, 74, 15, 79};
     for (int x = pen.x0; x <= pen.x1; ++x) {
-        for (const int y : {pen.y0, pen.y1}) {
-            const bool isPost = x == pen.x0 || x == pen.x1;
-            const SDL_FRect c{x * TILE, y * TILE + 6.0f, 16, 10};
-            addObject(assets.get("fence"), isPost ? &FENCE_POST : &FENCE_H,
-                      x * TILE, y * TILE, 16, 16, &c);
-        }
+        const SDL_FRect* topRect = (x == pen.x0) ? &FENCE_NW : (x == pen.x1) ? &FENCE_NE : &FENCE_H;
+        const SDL_FRect topC{x * TILE, pen.y0 * TILE + 6.0f, 16, 10};
+        addObject(assets.get("fence"), topRect, x * TILE, pen.y0 * TILE, 16, 16, &topC);
+
+        const SDL_FRect* botRect = (x == pen.x0) ? &FENCE_SW : (x == pen.x1) ? &FENCE_SE : &FENCE_H;
+        const SDL_FRect botC{x * TILE, pen.y1 * TILE + 6.0f, 16, 10};
+        addObject(assets.get("fence"), botRect, x * TILE, pen.y1 * TILE, 16, 16, &botC);
     }
     for (int y = pen.y0 + 1; y < pen.y1; ++y) {
         for (const int x : {pen.x0, pen.x1}) {
             if (x == pen.x1 && y == 76) continue;  // gate opening
             const SDL_FRect c{x * TILE, y * TILE + 6.0f, 16, 10};
-            addObject(assets.get("fence"), &FENCE_POST, x * TILE, y * TILE, 16, 16, &c);
+            addObject(assets.get("fence"), &FENCE_V, x * TILE, y * TILE, 16, 16, &c);
         }
     }
     spawns.pen = {pen.x0 * TILE, pen.y0 * TILE, (pen.x1 - pen.x0) * TILE, (pen.y1 - pen.y0) * TILE};
@@ -220,12 +249,35 @@ void World::drawGround(SDL_Renderer* r, const Camera& cam) const {
     const int y0 = SDL_max(0, static_cast<int>(std::floor(cam.y / TILE)));
     const int x1 = SDL_min(MAP_W - 1, static_cast<int>(std::ceil((cam.x + cam.w) / TILE)));
     const int y1 = SDL_min(MAP_H - 1, static_cast<int>(std::ceil((cam.y + cam.h) / TILE)));
+    // same-class test for the autotile mask; outside the map counts as "same"
+    // so no borders are drawn along the world edge
+    const auto sameClass = [&](int x, int y, Uint8 cls) {
+        return !inMap(x, y) || GROUND_META[ground[gi(x, y)]].cls == cls;
+    };
     for (int y = y0; y <= y1; ++y) {
         for (int x = x0; x <= x1; ++x) {
-            const SDL_Color& c = GROUND_COLS[ground[gi(x, y)]];
-            SDL_SetRenderDrawColor(r, c.r, c.g, c.b, 255);
-            SDL_FRect dst{x * TILE - std::round(cam.x), y * TILE - std::round(cam.y), TILE, TILE};
-            SDL_RenderFillRect(r, &dst);
+            const Uint8 t = ground[gi(x, y)];
+            const GroundMeta& m = GROUND_META[t];
+            const SDL_FRect dst{x * TILE - std::round(cam.x), y * TILE - std::round(cam.y), TILE, TILE};
+            if (!tiles) continue;
+            // the base is always grass
+            const SDL_FRect bsrc = autotile::srcRect(GROUND_META[G_A].elemCol,
+                                                     GROUND_META[G_A].elemRow, autotile::Center);
+            SDL_RenderTexture(r, tiles, &bsrc, &dst);
+            // non-autotiled tiles (base grass) are already drawn by the base
+            if (!m.autotile) continue;
+            // 8-neighbor mask of same-class tiles
+            Uint8 mask = 0;
+            if (sameClass(x, y - 1, m.cls)) mask |= autotile::N;
+            if (sameClass(x + 1, y, m.cls)) mask |= autotile::E;
+            if (sameClass(x, y + 1, m.cls)) mask |= autotile::S;
+            if (sameClass(x - 1, y, m.cls)) mask |= autotile::W;
+            if (sameClass(x + 1, y - 1, m.cls)) mask |= autotile::NE;
+            if (sameClass(x + 1, y + 1, m.cls)) mask |= autotile::SE;
+            if (sameClass(x - 1, y + 1, m.cls)) mask |= autotile::SW;
+            if (sameClass(x - 1, y - 1, m.cls)) mask |= autotile::NW;
+            const SDL_FRect src = autotile::srcRect(m.elemCol, m.elemRow, autotile::caseForMask(mask));
+            SDL_RenderTexture(r, tiles, &src, &dst);
         }
     }
     for (const GroundDetail& d : details) {

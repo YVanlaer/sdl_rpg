@@ -47,7 +47,7 @@ const std::pair<const char*, const char*> MANIFEST[] = {
 
     // world props
     {"houseHome", "Exterior - Tiny Asset Pack/Houses/7.png"},
-    {"houseCabin", "Exterior - Tiny Asset Pack/Houses/4.png"},
+    {"houseCabin", "Exterior - Tiny Asset Pack/Houses/3.png"},
     {"houseSmith", "Exterior - Tiny Asset Pack/Houses/NPCS houses/Blacksmith.png"},
     {"well", "Exterior - Tiny Asset Pack/Well .png"},
     {"bonfire", "Exterior - Tiny Asset Pack/bonfire.png"},
@@ -57,6 +57,7 @@ const std::pair<const char*, const char*> MANIFEST[] = {
     {"maples", "Farm - Tiny Asse Pack/Tree/Common/Shadow/Maple Tree.png"},
     {"stones", "Farm - Tiny Asse Pack/Props/Spring/Ground stones.png"},
     {"props", "Exterior - Tiny Asset Pack/Exterior.png"},
+    {"grassSpring", "Farm - Tiny Asse Pack/Tileset/Tileset Grass Spring.png"},
 
     // UI
     {"money", "UI - Tiny Asset Pack/Money.png"},
@@ -127,18 +128,18 @@ const SDL_FRect TREE_TEAL{16 * 4, 16 * 9, 16 * 2, 16 * 3};
 
 const SDL_FRect HOUSE_SMITH{16 * 5, 16 * 0, 16 * 9, 16 * 6};
 
-const SDL_FRect WELL{16 * 0, 16 * 0, 16 * 2, 16 * 4};
+const SDL_FRect WELL{16 * 0, 16 * 0, 16 * 2, 16 * 3};
 const SDL_FRect CHEST_CLOSED{16 * 0, 16 * 2, 16 * 2, 16 * 1};
 const SDL_FRect CHEST_OPEN{16 * 0, 16 * 3, 16 * 2, 16 * 1};
 
-const SDL_FRect FENCE_POST{16 * 0, 16 * 1, 16 * 1, 16 * 1};
-const SDL_FRect FENCE_H{16 * 2, 16 * 0, 16 * 1, 16 * 1};
-const SDL_FRect FENCE_CORNER{16 * 0, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_NW{16 * 0, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_NE{16 * 2, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_V{16 * 0, 16 * 1, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_SW{16 * 0, 16 * 2, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_SE{16 * 2, 16 * 2, 16 * 1, 16 * 1};
+const SDL_FRect FENCE_H{16 * 1, 16 * 2, 16 * 1, 16 * 1};
 
 const SDL_FRect TORCH{16 * 0, 16 * 9, 16 * 1, 16 * 1};
-
-const SDL_FRect STALL_TOP{16 * 14, 16 * 4, 16 * 2, 16 * 1};
-const SDL_FRect STALL_COUNTER{16 * 14, 16 * 5, 16 * 2, 16 * 2};
 
 const SDL_FRect HEART_FULL{16 * 0, 16 * 0, 16 * 1, 16 * 1};
 const SDL_FRect HEART_HALF{16 * 2, 16 * 0, 16 * 1, 16 * 1};

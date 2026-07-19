@@ -48,6 +48,7 @@ public:
     }
 
     std::vector<Uint8> ground;
+    SDL_Texture* tiles = nullptr;  // ground autotile sheet, set by build()
     std::vector<GroundDetail> details;
     std::vector<WorldObject> objects;
     std::vector<SDL_FRect> colliders;
