@@ -61,4 +61,7 @@ extern const SDL_FRect COIN;
 // 16x16 ground-detail cells (top-left corners only).
 extern const SDL_FPoint STONES[8];
 extern const SDL_FPoint FLOWERS[9];
+
+// 16x16 mature-crop cells on the Spring Crops sheet (one per crop kind).
+extern const SDL_FPoint CROPS[6];
 }  // namespace spriteRects

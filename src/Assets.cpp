@@ -58,6 +58,7 @@ const std::pair<const char*, const char*> MANIFEST[] = {
     {"stones", "Farm - Tiny Asse Pack/Props/Spring/Ground stones.png"},
     {"props", "Exterior - Tiny Asset Pack/Exterior.png"},
     {"grassSpring", "Farm - Tiny Asse Pack/Tileset/Tileset Grass Spring.png"},
+    {"crops", "Farm Crops - Tiny Asset Pack/Spring Crops.png"},
 
     // UI
     {"money", "UI - Tiny Asset Pack/Money.png"},
@@ -150,5 +151,10 @@ const SDL_FPoint STONES[8] = {{16 * 0, 16 * 0},  {16 * 1, 16 * 0},  {16 * 2, 16 
                               {16 * 0, 16 * 1}, {16 * 1, 16 * 1}, {16 * 2, 16 * 1}, {16 * 3, 16 * 1}};
 const SDL_FPoint FLOWERS[9] = {{16 * 0, 16 * 7},  {16 * 1, 16 * 7}, {16 * 2, 16 * 7}, {16 * 3, 16 * 7}, {16 * 4, 16 * 7},
                                {16 * 0, 16 * 8},  {16 * 1, 16 * 8}, {16 * 2, 16 * 8}, {16 * 3, 16 * 8}};
+
+// Spring Crops sheet: 9x22 cells of 16px, one crop per row (growth stages
+// left to right); col 5-6 is the mature plant.
+const SDL_FPoint CROPS[6] = {{16 * 6, 16 * 0}, {16 * 6, 16 * 2}, {16 * 5, 16 * 4},
+                             {16 * 6, 16 * 5}, {16 * 5, 16 * 7}, {16 * 6, 16 * 9}};
 
 }  // namespace spriteRects

@@ -55,13 +55,38 @@ Death sends you back to the bonfire minus 15% gold.
   right = flipped)
 - `src/Font.*` — 8x8 bitmap text renderer (public-domain font8x8)
 - `src/Sfx.*` — procedural WebAudio-style tone synth for SFX
-- `src/World.*` — map generation: ground, paths, village, forest, colliders
+- `src/World.*` — one map's static geometry (ground, objects, colliders) plus the
+  construction helpers map builders use (paths, borders, fences, trees, details)
+- `src/Map.h` — `Map` (world + its entities + exits), the `MapId` enum, builder decls
+- `src/maps/*` — one file per map (Village, Sunnybrook Farm): geometry + entities + exits
 - `src/Entities.*` — Player, Slime/Goblin/Boss AI, NPCs, animals, chests, pickups
-- `src/Game.*` — loop, input, camera, combat glue, dialogue/quests/shop, HUD, screens
+- `src/Game.*` — loop, input, camera, map switching, combat glue, dialogue/quests/shop,
+  HUD, screens
+
+## Maps
+
+The game is a collection of self-contained maps (`src/maps/`). Each map owns its
+static geometry (`World`), its entities (enemies, NPCs, animals, props, pickups)
+and its exits. Only the active map updates and draws; inactive maps keep their
+state, so a map is exactly as you left it when you return. Walking into a
+`MapExit` area teleports the player to the exit's entry point in the target map.
+
+To add a new map:
+
+1. Add an entry to the `MapId` enum in `src/Map.h`.
+2. Create `src/maps/MyMap.cpp` with a `buildMyMap(const Assets&)` builder
+   (copy `Farm.cpp` as a starting point; declare it in `src/Map.h`) and add the
+   file to `CMakeLists.txt`.
+3. Register the builder in `Game::buildMaps()` (`src/Game.cpp`), in the same
+   order as the `MapId` enum.
+4. Connect it: add `MapExit`s on both sides (`area` = trigger zone in world
+   pixels, `target`/`entry` = where the player goes). Use `World::addBorder`
+   with a `BorderGap` if the exit sits at the map edge.
 
 ## Debug hooks (env vars)
 
 - `HV_PLAY=1` — skip the title screen
+- `HV_MAP=village|farm` — start on another map (`Map::key`)
 - `HV_POS=x,y` — warp the player/camera to (x, y)
 - `HV_ACT=dialog|shop` — trigger an action at start
 - `HV_SCREENSHOT=/path/out.png` — save a screenshot and quit

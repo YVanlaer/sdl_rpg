@@ -12,6 +12,7 @@
 #include "Camera.h"
 #include "Entities.h"
 #include "Font.h"
+#include "Map.h"
 #include "Sfx.h"
 #include "World.h"
 
@@ -78,7 +79,9 @@ public:
     Assets assets;
     Font font;
     Sfx audio;
-    World world;
+    std::vector<std::unique_ptr<Map>> maps;  // indexed by MapId, filled by buildMaps()
+    Map* map = nullptr;                      // the active map (non-owning)
+    World& world() { return map->world; }    // active map's static geometry
     Camera cam;
     Input input;
     GameState state = GameState::Title;
@@ -86,7 +89,6 @@ public:
     float shake = 0.0f;
 
     std::unique_ptr<Player> player;
-    std::vector<std::unique_ptr<Entity>> enemies, npcs, animals, props, pickups;
     std::vector<FloatText> texts;
 
 private:
@@ -95,7 +97,10 @@ private:
     void update(float dt);
     void render();
 
-    void spawnWorld();
+    void buildMaps();
+    void switchMap(MapId id, SDL_FPoint entry);
+    void refreshInteractables();
+    Slime* findBoss();
     void interact();
     void shopBuy(int n);
     void startDialogue(std::unique_ptr<Dialogue> d);
@@ -123,10 +128,11 @@ private:
     } quests;
     std::unique_ptr<Dialogue> dialogue;
     bool shopBought = false;
-    Slime* boss = nullptr;  // non-owning; cleared on kill
+    Slime* boss = nullptr;  // non-owning; cleared on kill, re-scanned on map switch
     bool bossDown = false;
     float winT = 0.0f;
     float deathTimer = -1.0f;
+    float mapCooldown = 0.0f;  // exit triggers are ignored briefly after a map switch
 
     // headless screenshot hook (HV_SCREENSHOT=/path/out.png)
     std::string shotPath;
