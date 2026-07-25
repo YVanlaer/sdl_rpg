@@ -18,8 +18,8 @@ bool Entity::collides(const World& world, float nx, float ny) const {
 void Entity::tryMove(const World& world, float dx, float dy) {
     if (dx != 0.0f && !collides(world, x + dx, y)) x += dx;
     if (dy != 0.0f && !collides(world, x, y + dy)) y += dy;
-    x = clampf(x, 8, WORLD_W - 8);
-    y = clampf(y, 16, WORLD_H - 4);
+    x = clampf(x, 8, world.pixelW() - 8);
+    y = clampf(y, 16, world.pixelH() - 4);
 }
 
 void Entity::applyKnockback(const World& world, float dt) {
@@ -133,7 +133,7 @@ void Player::update(float dt, Game& game) {
     animT += dt;
     invuln = SDL_max(0.0f, invuln - dt);
     attackCd = SDL_max(0.0f, attackCd - dt);
-    applyKnockback(game.world, dt);
+    applyKnockback(game.world(), dt);
 
     if (state == State::Dead) return;
 
@@ -159,7 +159,7 @@ void Player::update(float dt, Game& game) {
         dy /= len;
         running = input.run;
         const float sp = running ? 118.0f : 72.0f;
-        tryMove(game.world, dx * sp * dt, dy * sp * dt);
+        tryMove(game.world(), dx * sp * dt, dy * sp * dt);
         if (dx < 0) dir = Direction::Left;
         else if (dx > 0) dir = Direction::Right;
         else if (dy < 0) dir = Direction::Up;
@@ -247,7 +247,7 @@ void Slime::hurt(Game& game, int dmg, float sx, float sy) {
 void Slime::update(float dt, Game& game) {
     animT += dt;
     stateT += dt;
-    applyKnockback(game.world, dt);
+    applyKnockback(game.world(), dt);
     Player& p = *game.player;
     const float d = distf(x, y, p.x, p.y);
 
@@ -307,7 +307,7 @@ void Slime::update(float dt, Game& game) {
         } else {
             const float sp = state == State::Chase ? k.speed : k.speed * 0.5f;
             faceTowards(tx, ty);
-            tryMove(game.world, (tx - x) / dd * sp * dt, (ty - y) / dd * sp * dt);
+            tryMove(game.world(), (tx - x) / dd * sp * dt, (ty - y) / dd * sp * dt);
         }
     }
 }
@@ -372,7 +372,7 @@ void Goblin::hurt(Game& game, int dmg, float sx, float sy) {
 void Goblin::update(float dt, Game& game) {
     animT += dt;
     stateT += dt;
-    applyKnockback(game.world, dt);
+    applyKnockback(game.world(), dt);
     Player& p = *game.player;
     const float d = distf(x, y, p.x, p.y);
 
@@ -387,7 +387,7 @@ void Goblin::update(float dt, Game& game) {
             const int f = frame();
             if (f >= 1 && f <= 3) {  // lunge
                 const float dd = SDL_max(1.0f, distf(x, y, p.x, p.y));
-                tryMove(game.world, (p.x - x) / dd * 95 * dt, (p.y - y) / dd * 95 * dt);
+                tryMove(game.world(), (p.x - x) / dd * 95 * dt, (p.y - y) / dd * 95 * dt);
             }
             if (f == 2 && !attackDidHit) {
                 attackDidHit = true;
@@ -426,7 +426,7 @@ void Goblin::update(float dt, Game& game) {
         } else {
             const float sp = state == State::Chase ? speed : speed * 0.45f;
             faceTowards(tx, ty);
-            tryMove(game.world, (tx - x) / dd * sp * dt, (ty - y) / dd * sp * dt);
+            tryMove(game.world(), (tx - x) / dd * sp * dt, (ty - y) / dd * sp * dt);
         }
     }
 }
@@ -497,7 +497,7 @@ void Chicken::update(float dt, Game& game) {
             waitT = 1 + randf() * 2.5f;
         } else {
             flip = tx < x;
-            tryMove(game.world, (tx - x) / dd * 14 * dt, (ty - y) / dd * 14 * dt);
+            tryMove(game.world(), (tx - x) / dd * 14 * dt, (ty - y) / dd * 14 * dt);
         }
     } else if (stateT > waitT) {
         state = State::Walk;
@@ -538,7 +538,7 @@ void Fox::update(float dt, Game& game) {
             waitT = 2 + randf() * 4.0f;
         } else {
             flip = tx < x;
-            tryMove(game.world, (tx - x) / dd * 26 * dt, (ty - y) / dd * 26 * dt);
+            tryMove(game.world(), (tx - x) / dd * 26 * dt, (ty - y) / dd * 26 * dt);
         }
     } else if (stateT > waitT) {
         walking = true;
@@ -570,11 +570,11 @@ void Chest::interact(Game& game) {
     const int n = big ? 8 : 3;
     for (int i = 0; i < n; ++i) {
         const float a = randf() * 6.28318f;
-        game.pickups.push_back(std::make_unique<Pickup>(
+        game.map->pickups.push_back(std::make_unique<Pickup>(
             game.assets, x + std::cos(a) * 14, y - 6 + std::sin(a) * 10,
             Pickup::Type::Coin, big ? 10 : 1 + randInt(0, 2)));
     }
-    game.pickups.push_back(
+    game.map->pickups.push_back(
         std::make_unique<Pickup>(game.assets, x, y - 14, Pickup::Type::Heart, 2));
     game.addFloat(x, y - 24, big ? "Treasure!" : "Loot!", hexColor(0xffd94a));
     if (big) game.addFloat(x, y - 34, "The Vale is safe!", hexColor(0x7dff8a));

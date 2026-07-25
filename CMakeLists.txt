@@ -13,6 +13,8 @@ add_executable(sdl3_game
     src/main.cpp
     src/Game.cpp
     src/World.cpp
+    src/maps/Village.cpp
+    src/maps/Farm.cpp
     src/Autotile.cpp
     src/Entities.cpp
     src/Assets.cpp

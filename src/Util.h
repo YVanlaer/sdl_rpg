@@ -7,6 +7,22 @@
 
 // Small shared helpers used across the game.
 
+// deterministic hash noise (same formula as the JS version)
+inline double h2(double x, double y) {
+    const double s = std::sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return s - std::floor(s);
+}
+
+// smooth value noise over h2: coherent blobs instead of per-tile static
+inline double vnoise(double x, double y) {
+    const int x0 = static_cast<int>(std::floor(x)), y0 = static_cast<int>(std::floor(y));
+    double fx = x - x0, fy = y - y0;
+    fx = fx * fx * (3 - 2 * fx);
+    fy = fy * fy * (3 - 2 * fy);
+    const double a = h2(x0, y0), b = h2(x0 + 1, y0), c = h2(x0, y0 + 1), d = h2(x0 + 1, y0 + 1);
+    return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+}
+
 inline float clampf(float v, float lo, float hi) {
     return v < lo ? lo : (v > hi ? hi : v);
 }

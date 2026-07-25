@@ -155,8 +155,12 @@ bool Game::init() {
         std::cerr << "Audio init failed (continuing silent): " << SDL_GetError() << std::endl;
     }
 
-    world.build(assets);
-    spawnWorld();
+    buildMaps();
+    map = maps[static_cast<size_t>(MapId::Village)].get();
+    player = std::make_unique<Player>(assets, map->playerStart.x, map->playerStart.y);
+    player->gold = 5;
+    refreshInteractables();
+    boss = findBoss();
     snapCamera();
     applyDebugEnv();
     running = true;
@@ -215,52 +219,40 @@ Game::Input Game::makeInput() const {
     return inp;
 }
 
-void Game::spawnWorld() {
-    const Spawns& s = world.spawns;
-    player = std::make_unique<Player>(assets, s.player.x, s.player.y);
-    player->gold = 5;
+void Game::buildMaps() {
+    // Register every map here, in the same order as the MapId enum (Map.h).
+    maps.push_back(buildVillage(assets));
+    maps.push_back(buildFarm(assets));
+}
 
-    enemies.clear();
-    for (const SDL_FPoint& p : s.slimes)
-        enemies.push_back(std::make_unique<Slime>(assets, p.x, p.y, SlimeName::Blue));
-    for (const SDL_FPoint& p : s.greens)
-        enemies.push_back(std::make_unique<Slime>(assets, p.x, p.y, SlimeName::Green));
-    for (const SDL_FPoint& p : s.pinks)
-        enemies.push_back(std::make_unique<Slime>(assets, p.x, p.y, SlimeName::Pink));
-    for (const SDL_FPoint& p : s.goblins)
-        enemies.push_back(std::make_unique<Goblin>(assets, p.x, p.y));
-    auto goldenSlime = std::make_unique<Slime>(assets, s.boss.x, s.boss.y, SlimeName::Golden);
-    boss = goldenSlime.get();
-    enemies.push_back(std::move(goldenSlime));
+// Moves the player to another map, placing them at `entry`. The old map keeps
+// its entities as they were; the new map resumes from its own state.
+void Game::switchMap(MapId id, SDL_FPoint entry) {
+    map = maps[static_cast<size_t>(id)].get();
+    player->x = entry.x;
+    player->y = entry.y;
+    player->kbx = player->kby = 0.0f;
+    texts.clear();
+    refreshInteractables();
+    boss = findBoss();
+    mapCooldown = 0.6f;
+    snapCamera();
+    addFloat(player->x, player->y - 40, map->name, GOLD);
+}
 
-    npcs.clear();
-    npcs.push_back(std::make_unique<NPC>(s.smith.x, s.smith.y, "Bram",
-                                         CharDef{assets.get("smithIdle"), 32, 32, 4, 5},
-                                         NPC::Kind::Smith));
-    npcs.push_back(std::make_unique<NPC>(
-        s.merchant.x, s.merchant.y, "Grub",
-        CharDef{assets.get("merchant"), 16 * 4, 16 * 3, 4, 6, 0, true}, NPC::Kind::Merchant));
-
-    animals.clear();
-    animals.push_back(
-        std::make_unique<Chicken>(s.chickens[0].x, s.chickens[0].y, assets.get("chickenWhite"), s.pen));
-    animals.push_back(
-        std::make_unique<Chicken>(s.chickens[1].x, s.chickens[1].y, assets.get("chickenBrown"), s.pen));
-    animals.push_back(
-        std::make_unique<Chicken>(s.chickens[2].x, s.chickens[2].y, assets.get("chickenWhite"), s.pen));
-    for (const SDL_FPoint& p : s.foxes)
-        animals.push_back(std::make_unique<Fox>(p.x, p.y, assets.get("fox")));
-
-    props.clear();
-    props.push_back(std::make_unique<Bonfire>(assets, s.bonfire.x, s.bonfire.y));
-    props.push_back(std::make_unique<Chest>(assets, s.chestHome.x, s.chestHome.y, false));
-    props.push_back(std::make_unique<Chest>(assets, s.chestBoss.x, s.chestBoss.y, true));
-
+void Game::refreshInteractables() {
     interactables.clear();
-    for (const auto& n : npcs) interactables.push_back(n.get());
-    for (const auto& p : props) {
+    for (const auto& n : map->npcs) interactables.push_back(n.get());
+    for (const auto& p : map->props) {
         if (dynamic_cast<Chest*>(p.get())) interactables.push_back(p.get());
     }
+}
+
+// The boss-bar target, if the active map holds a (living) boss.
+Slime* Game::findBoss() {
+    for (const auto& e : map->enemies)
+        if (e->type == EnemyType::Boss) return static_cast<Slime*>(e.get());
+    return nullptr;
 }
 
 void Game::interact() {
@@ -285,7 +277,7 @@ void Game::meleeHit(Player& attacker) {
         case Direction::Right: dvx = 1; break;
     }
     bool hitAny = false;
-    for (const auto& e : enemies) {
+    for (const auto& e : map->enemies) {
         if (e->isDead()) continue;
         const float dx = e->x - attacker.x, dy = e->y - attacker.y;
         const float d = std::hypot(dx, dy);
@@ -317,12 +309,12 @@ void Game::onEnemyKilled(Entity& e) {
     const int coins = SDL_min(3, total);
     for (int i = 0; i < coins; ++i) {
         const float a = randf() * 6.28318f;
-        pickups.push_back(std::make_unique<Pickup>(
+        map->pickups.push_back(std::make_unique<Pickup>(
             assets, e.x + std::cos(a) * 8, e.y - 4 + std::sin(a) * 6, Pickup::Type::Coin,
             SDL_max(1, static_cast<int>(std::lround(static_cast<float>(total) / coins)))));
     }
     if (randf() < 0.18f)
-        pickups.push_back(
+        map->pickups.push_back(
             std::make_unique<Pickup>(assets, e.x, e.y - 8, Pickup::Type::Heart, 2));
     player->addXP(*this, xp);
 
@@ -465,8 +457,8 @@ const Quest* Game::currentQuest() const {
 }
 
 void Game::snapCamera() {
-    cam.x = clampf(player->x - VIEW_W / 2.0f, 0.0f, WORLD_W - VIEW_W);
-    cam.y = clampf(player->y - VIEW_H / 2.0f, 0.0f, WORLD_H - VIEW_H);
+    cam.x = clampf(player->x - VIEW_W / 2.0f, 0.0f, world().pixelW() - VIEW_W);
+    cam.y = clampf(player->y - VIEW_H / 2.0f, 0.0f, world().pixelH() - VIEW_H);
 }
 
 void Game::update(float dt) {
@@ -487,9 +479,14 @@ void Game::update(float dt) {
             return;
         case GameState::Dead:
             if (input.confirmPressed) {
-                const SDL_FPoint& s = world.spawns.bonfire;
-                player->x = s.x + 10;
-                player->y = s.y + 20;
+                // wake up at the map that holds the respawn point (the bonfire)
+                Map* home = map;
+                for (const auto& m : maps)
+                    if (m->hasRespawn) {
+                        home = m.get();
+                        break;
+                    }
+                switchMap(home->id, home->respawn);
                 player->hp = player->maxHp;
                 player->state = Player::State::Idle;
                 player->invuln = 1.5f;
@@ -520,18 +517,30 @@ void Game::update(float dt) {
         }
     }
 
-    for (const auto& e : enemies) e->update(dt, *this);
-    for (const auto& n : npcs) n->update(dt, *this);
-    for (const auto& a : animals) a->update(dt, *this);
-    for (const auto& p : props) p->update(dt, *this);
-    for (const auto& pk : pickups) pk->update(dt, *this);
+    // map exits: walking into a trigger area teleports to another map
+    mapCooldown = SDL_max(0.0f, mapCooldown - dt);
+    if (state == GameState::Play && mapCooldown <= 0.0f && !player->isDead()) {
+        const SDL_FRect pb = player->box();
+        for (const MapExit& ex : map->exits) {
+            if (rectsOverlap(pb, ex.area)) {
+                switchMap(ex.target, ex.entry);
+                break;
+            }
+        }
+    }
+
+    for (const auto& e : map->enemies) e->update(dt, *this);
+    for (const auto& n : map->npcs) n->update(dt, *this);
+    for (const auto& a : map->animals) a->update(dt, *this);
+    for (const auto& p : map->props) p->update(dt, *this);
+    for (const auto& pk : map->pickups) pk->update(dt, *this);
     for (FloatText& t : texts) t.update(dt);
 
     // enemy separation (soft)
-    for (size_t i = 0; i < enemies.size(); ++i) {
-        for (size_t j = i + 1; j < enemies.size(); ++j) {
-            Entity& a = *enemies[i];
-            Entity& b = *enemies[j];
+    for (size_t i = 0; i < map->enemies.size(); ++i) {
+        for (size_t j = i + 1; j < map->enemies.size(); ++j) {
+            Entity& a = *map->enemies[i];
+            Entity& b = *map->enemies[j];
             if (a.isDead() || b.isDead()) continue;
             const float dx = b.x - a.x, dy = b.y - a.y;
             const float d = std::hypot(dx, dy);
@@ -548,8 +557,10 @@ void Game::update(float dt) {
     }
 
     const auto isRemoved = [](const auto& e) { return e->remove; };
-    enemies.erase(std::remove_if(enemies.begin(), enemies.end(), isRemoved), enemies.end());
-    pickups.erase(std::remove_if(pickups.begin(), pickups.end(), isRemoved), pickups.end());
+    map->enemies.erase(std::remove_if(map->enemies.begin(), map->enemies.end(), isRemoved),
+                       map->enemies.end());
+    map->pickups.erase(std::remove_if(map->pickups.begin(), map->pickups.end(), isRemoved),
+                       map->pickups.end());
     texts.erase(
         std::remove_if(texts.begin(), texts.end(), [](const FloatText& t) { return t.remove; }),
         texts.end());
@@ -571,7 +582,7 @@ void Game::update(float dt) {
 /* ============================= render ============================= */
 
 void Game::drawWorld() {
-    world.drawGround(renderer, cam);
+    world().drawGround(renderer, cam);
 
     // y-sorted: world objects + entities
     struct DrawItem {
@@ -580,26 +591,26 @@ void Game::drawWorld() {
         Entity* ent;
     };
     std::vector<DrawItem> drawList;
-    for (const WorldObject& o : world.objects) {
-        if (world.inView(cam, o.x, o.y, o.w, o.h)) drawList.push_back({o.sortY, &o, nullptr});
+    for (const WorldObject& o : world().objects) {
+        if (world().inView(cam, o.x, o.y, o.w, o.h)) drawList.push_back({o.sortY, &o, nullptr});
     }
     const auto addEnts = [&](std::vector<std::unique_ptr<Entity>>& list) {
         for (const auto& e : list) drawList.push_back({e->y, nullptr, e.get()});
     };
-    addEnts(props);
-    addEnts(animals);
-    addEnts(npcs);
-    addEnts(enemies);
+    addEnts(map->props);
+    addEnts(map->animals);
+    addEnts(map->npcs);
+    addEnts(map->enemies);
     drawList.push_back({player->y, nullptr, player.get()});
     std::sort(drawList.begin(), drawList.end(),
               [](const DrawItem& a, const DrawItem& b) { return a.sortY < b.sortY; });
 
     for (const DrawItem& item : drawList) {
-        if (item.obj) world.drawObject(renderer, cam, *item.obj);
+        if (item.obj) world().drawObject(renderer, cam, *item.obj);
         else item.ent->draw(renderer, *this);
     }
 
-    for (const auto& pk : pickups) pk->draw(renderer, *this);
+    for (const auto& pk : map->pickups) pk->draw(renderer, *this);
     for (const FloatText& t : texts) t.draw(renderer, *this);
 }
 
@@ -750,6 +761,14 @@ void Game::drawShop() {
 
 void Game::applyDebugEnv() {
     if (SDL_getenv("HV_PLAY")) state = GameState::Play;
+    if (const char* mk = SDL_getenv("HV_MAP")) {  // start on another map (Map::key)
+        for (const auto& m : maps) {
+            if (m->key == mk) {
+                switchMap(m->id, m->playerStart);
+                break;
+            }
+        }
+    }
     if (const char* pos = SDL_getenv("HV_POS")) {
         float px, py;
         if (std::sscanf(pos, "%f,%f", &px, &py) == 2) {
