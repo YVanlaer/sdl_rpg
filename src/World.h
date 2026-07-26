@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <optional>
 #include <vector>
 
 #include "Assets.h"
@@ -20,12 +21,36 @@ constexpr Uint8 G_DARK = 6;     // boss clearing (deeper grass)
 constexpr Uint8 G_FOREST2 = 7;  // forest floor variant
 
 // A y-sorted static sprite (tree, house, fence, ...) in the world.
+// If img is nullptr the object is an invisible collider (e.g. border walls).
 struct WorldObject {
     SDL_Texture* img;
     const SDL_FRect* rect;  // nullptr = whole image
     float x, y, w, h;
     float sortY;
+    std::optional<SDL_FRect> solid;  // world-space collider, defined at object level
 };
+
+// A reusable tree definition: all visual/collision characteristics are declared
+// once, then placed many times in maps. The solid rectangle is relative to the
+// sprite's top-left corner and is translated to world space when placed.
+struct TreeType {
+    const char* texKey;
+    const SDL_FRect* rect;
+    float w, h;
+    SDL_FRect solid;
+};
+
+inline TreeType makeTreeType(const char* texKey, const SDL_FRect* rect, float w, float h) {
+    const float sw = SDL_max(10.0f, w * 0.28f), sh = 8.0f;
+    return TreeType{texKey, rect, w, h, {w / 2 - sw / 2, h - sh - 2, sw, sh}};
+}
+
+namespace treeTypes {
+extern const TreeType PINE1;
+extern const TreeType PINE2;
+extern const TreeType MAPLE_GREEN;
+extern const TreeType MAPLE_ORANGE;
+}  // namespace treeTypes
 
 // Small 16px ground decoration (stone, flower, crop).
 struct GroundDetail {
@@ -34,10 +59,10 @@ struct GroundDetail {
     float x, y;
 };
 
-// The static geometry of one map: ground tiles, decoration, y-sorted objects
-// and colliders. Dimensions are per-map. A map builder (see src/maps/) fills
-// this in via the construction helpers below; generation is deterministic
-// (same h2/vnoise formulas as the JS version).
+// The static geometry of one map: ground tiles, decoration and y-sorted objects.
+// Each object may carry its own world-space solid rectangle. Dimensions are
+// per-map. A map builder (see src/maps/) fills this in via the construction
+// helpers below; generation is deterministic (same h2/vnoise formulas as the JS version).
 class World {
 public:
     // Sizes the grid and sets the ground autotile sheet.
@@ -53,8 +78,8 @@ public:
     // Static sprite; solid (optional) is its world-space collider.
     void addObject(SDL_Texture* img, const SDL_FRect* rect, float px, float py, float w, float h,
                    const SDL_FRect* solid = nullptr);
-    // Tree with a solid base at the trunk bottom.
-    void addTree(SDL_Texture* img, const SDL_FRect* rect, float px, float py, float w, float h);
+    // Place a tree defined by its type. The map only chooses the position.
+    void addTree(const Assets& assets, const TreeType& type, float px, float py);
     // Dirt path, 2 tiles tall, carved in straight L-shaped segments.
     void carvePath(int x0, int y0, int x1, int y1);
 
@@ -62,8 +87,8 @@ public:
     struct BorderGap {
         int side, t0, t1;
     };
-    // Ring of border pines plus hard wall colliders just inside the edge.
-    void addBorder(SDL_Texture* pines, const BorderGap* gap = nullptr);
+    // Ring of border pines plus invisible hard wall objects just inside the edge.
+    void addBorder(const Assets& assets, const BorderGap* gap = nullptr);
 
     // Fenced rectangle of tiles; the (gateX, gateY) tile is left open.
     void addFenceRect(SDL_Texture* fence, int x0, int y0, int x1, int y1, int gateX = -1,
@@ -84,5 +109,4 @@ public:
     int w = 0, h = 0;              // size in tiles
     std::vector<GroundDetail> details;
     std::vector<WorldObject> objects;
-    std::vector<SDL_FRect> colliders;
 };

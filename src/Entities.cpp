@@ -9,8 +9,8 @@
 
 bool Entity::collides(const World& world, float nx, float ny) const {
     const SDL_FRect b{nx - w / 2, ny - h, w, h};
-    for (const SDL_FRect& c : world.colliders) {
-        if (rectsOverlap(b, c)) return true;
+    for (const WorldObject& o : world.objects) {
+        if (o.solid && rectsOverlap(b, *o.solid)) return true;
     }
     return false;
 }
@@ -315,7 +315,7 @@ void Slime::update(float dt, Game& game) {
 void Slime::draw(SDL_Renderer* r, const Game& game) {
     const float s = k.scale;
     drawShadow(r, game.cam, x, y, 7 * s);
-    drawCharFrame(r, game.cam, makeDef(), dir, frame(), x, y + 2 * s, s);
+    drawCharFrame(r, game.cam, makeDef(), dir, frame(), x, y + 9 * s, s);
 }
 
 /* ============================= Goblin ============================= */

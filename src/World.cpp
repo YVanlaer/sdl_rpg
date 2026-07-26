@@ -34,6 +34,15 @@ constexpr GroundMeta GROUND_META[] = {
 
 }  // namespace
 
+namespace treeTypes {
+
+const TreeType PINE1 = makeTreeType("pines", &spriteRects::PINE1, 36, 60);
+const TreeType PINE2 = makeTreeType("pines", &spriteRects::PINE2, 36, 60);
+const TreeType MAPLE_GREEN = makeTreeType("maples", &spriteRects::MAPLE_GREEN, 36, 60);
+const TreeType MAPLE_ORANGE = makeTreeType("maples", &spriteRects::MAPLE_ORANGE, 36, 60);
+
+}  // namespace treeTypes
+
 void World::init(int wTiles, int hTiles, SDL_Texture* tileset) {
     w = wTiles;
     h = hTiles;
@@ -43,15 +52,14 @@ void World::init(int wTiles, int hTiles, SDL_Texture* tileset) {
 
 void World::addObject(SDL_Texture* img, const SDL_FRect* rect, float px, float py, float w,
                       float h, const SDL_FRect* solid) {
-    objects.push_back(WorldObject{img, rect, px, py, w, h, py + h});
-    if (solid) colliders.push_back(*solid);
+    WorldObject obj{img, rect, px, py, w, h, py + h};
+    if (solid) obj.solid = *solid;
+    objects.push_back(obj);
 }
 
-void World::addTree(SDL_Texture* img, const SDL_FRect* rect, float px, float py, float w,
-                    float h) {
-    const float sw = SDL_max(10.0f, w * 0.28f), sh = 8.0f;
-    const SDL_FRect solid{px + w / 2 - sw / 2, py + h - sh - 2, sw, sh};
-    addObject(img, rect, px, py, w, h, &solid);
+void World::addTree(const Assets& assets, const TreeType& type, float px, float py) {
+    const SDL_FRect worldSolid{type.solid.x + px, type.solid.y + py, type.solid.w, type.solid.h};
+    addObject(assets.get(type.texKey), type.rect, px, py, type.w, type.h, &worldSolid);
 }
 
 void World::carvePath(int x0, int y0, int x1, int y1) {
@@ -65,44 +73,48 @@ void World::carvePath(int x0, int y0, int x1, int y1) {
     markDirt(x1, y1);
 }
 
-void World::addBorder(SDL_Texture* pines, const BorderGap* gap) {
-    using namespace spriteRects;
+void World::addBorder(const Assets& assets, const BorderGap* gap) {
+    using namespace treeTypes;
     // trees skip two extra rows around the gap so the opening reads clearly
     const auto skip = [&](int side, int t) {
         return gap && gap->side == side && t >= gap->t0 - 2 && t <= gap->t1 + 2;
     };
     for (int x = 0; x < w; x += 2) {
-        if (!skip(0, x)) addTree(pines, &PINE1, x * TILE - 10.0f, 2, 36, 60);
-        if (!skip(2, x)) addTree(pines, &PINE2, x * TILE - 10.0f, (h - 2) * TILE - 20.0f, 36, 60);
+        if (!skip(0, x)) addTree(assets, PINE1, x * TILE - 10.0f, 2);
+        if (!skip(2, x)) addTree(assets, PINE2, x * TILE - 10.0f, (h - 2) * TILE - 20.0f);
     }
     for (int y = 0; y < h; y += 2) {
-        if (!skip(3, y)) addTree(pines, &PINE1, -14, y * TILE, 36, 60);
-        if (!skip(1, y)) addTree(pines, &PINE2, (w - 2) * TILE - 4.0f, y * TILE, 36, 60);
+        if (!skip(3, y)) addTree(assets, PINE1, -14, y * TILE);
+        if (!skip(1, y)) addTree(assets, PINE2, (w - 2) * TILE - 4.0f, y * TILE);
     }
     // hard walls just inside the border, split around the gap
+    const auto addWall = [&](float wx, float wy, float ww, float wh) {
+        const SDL_FRect solid{wx, wy, ww, wh};
+        addObject(nullptr, nullptr, wx, wy, ww, wh, &solid);
+    };
     const float W = pixelW(), H = pixelH();
-    if (!gap || gap->side != 0) colliders.push_back({-32, -32, W + 64, 56});
-    if (!gap || gap->side != 2) colliders.push_back({-32, H - 24, W + 64, 56});
-    if (!gap || gap->side != 3) colliders.push_back({-32, -32, 56, H + 64});
-    if (!gap || gap->side != 1) colliders.push_back({W - 24, -32, 56, H + 64});
+    if (!gap || gap->side != 0) addWall(-32, -32, W + 64, 56);
+    if (!gap || gap->side != 2) addWall(-32, H - 24, W + 64, 56);
+    if (!gap || gap->side != 3) addWall(-32, -32, 56, H + 64);
+    if (!gap || gap->side != 1) addWall(W - 24, -32, 56, H + 64);
     if (gap) {
         const float g0 = gap->t0 * TILE, g1 = (gap->t1 + 1) * TILE;
         switch (gap->side) {
             case 0:
-                colliders.push_back({-32, -32, g0 + 32, 56});
-                colliders.push_back({g1, -32, W + 64 - g1, 56});
+                addWall(-32, -32, g0 + 32, 56);
+                addWall(g1, -32, W + 64 - g1, 56);
                 break;
             case 2:
-                colliders.push_back({-32, H - 24, g0 + 32, 56});
-                colliders.push_back({g1, H - 24, W + 64 - g1, 56});
+                addWall(-32, H - 24, g0 + 32, 56);
+                addWall(g1, H - 24, W + 64 - g1, 56);
                 break;
             case 3:
-                colliders.push_back({-32, -32, 56, g0 + 32});
-                colliders.push_back({-32, g1, 56, H + 64 - g1});
+                addWall(-32, -32, 56, g0 + 32);
+                addWall(-32, g1, 56, H + 64 - g1);
                 break;
             case 1:
-                colliders.push_back({W - 24, -32, 56, g0 + 32});
-                colliders.push_back({W - 24, g1, 56, H + 64 - g1});
+                addWall(W - 24, -32, 56, g0 + 32);
+                addWall(W - 24, g1, 56, H + 64 - g1);
                 break;
             default: break;
         }
@@ -200,6 +212,7 @@ void World::drawGround(SDL_Renderer* r, const Camera& cam) const {
 }
 
 void World::drawObject(SDL_Renderer* r, const Camera& cam, const WorldObject& o) const {
+    if (!o.img) return;  // invisible collider (e.g. border walls)
     SDL_FRect full{0, 0, 0, 0};
     const SDL_FRect* srcPtr = o.rect;
     if (!srcPtr) {

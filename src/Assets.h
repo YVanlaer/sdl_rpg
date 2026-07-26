@@ -33,10 +33,10 @@ extern const SDL_FRect PINE1;
 extern const SDL_FRect PINE2;
 extern const SDL_FRect MAPLE_GREEN;
 extern const SDL_FRect MAPLE_ORANGE;
-extern const SDL_FRect MAPLE_BIRCH;
+/*extern const SDL_FRect MAPLE_BIRCH;
 extern const SDL_FRect TREE_BIG_GREEN;
 extern const SDL_FRect TREE_PINK;
-extern const SDL_FRect TREE_TEAL;
+extern const SDL_FRect TREE_TEAL;*/
 
 extern const SDL_FRect HOUSE_SMITH;  // first house on the blacksmith sheet
 
@@ -50,8 +50,6 @@ extern const SDL_FRect FENCE_V;
 extern const SDL_FRect FENCE_SW;
 extern const SDL_FRect FENCE_SE;
 extern const SDL_FRect FENCE_H;
-
-extern const SDL_FRect TORCH;
 
 extern const SDL_FRect HEART_FULL;
 extern const SDL_FRect HEART_HALF;

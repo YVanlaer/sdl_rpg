@@ -120,12 +120,12 @@ namespace spriteRects {
 // Sheets have white silhouette rows at the bottom — rects stop above them.
 const SDL_FRect PINE1{16 * 4, 16 * 0, 16 * 2, 16 * 3};
 const SDL_FRect PINE2{16 * 6, 16 * 0, 16 * 2, 16 * 3};
-const SDL_FRect MAPLE_GREEN{16 * 0, 16 * 3, 16 * 2, 16 * 4};
-const SDL_FRect MAPLE_ORANGE{16 * 4, 16 * 3, 16 * 2, 16 * 4};
-const SDL_FRect MAPLE_BIRCH{16 * 7, 16 * 3, 16 * 2, 16 * 4};
+const SDL_FRect MAPLE_GREEN{16 * 0, 16 * 3, 16 * 2, 16 * 3};
+const SDL_FRect MAPLE_ORANGE{16 * 4, 16 * 3, 16 * 2, 16 * 3};
+/*const SDL_FRect MAPLE_BIRCH{16 * 7, 16 * 3, 16 * 2, 16 * 4};
 const SDL_FRect TREE_BIG_GREEN{16 * 0, 16 * 9, 16 * 2, 16 * 3};
 const SDL_FRect TREE_PINK{16 * 0, 16 * 12, 16 * 2, 16 * 3};
-const SDL_FRect TREE_TEAL{16 * 4, 16 * 9, 16 * 2, 16 * 3};
+const SDL_FRect TREE_TEAL{16 * 4, 16 * 9, 16 * 2, 16 * 3};*/
 
 const SDL_FRect HOUSE_SMITH{16 * 5, 16 * 0, 16 * 9, 16 * 6};
 
@@ -139,8 +139,6 @@ const SDL_FRect FENCE_V{16 * 0, 16 * 1, 16 * 1, 16 * 1};
 const SDL_FRect FENCE_SW{16 * 0, 16 * 2, 16 * 1, 16 * 1};
 const SDL_FRect FENCE_SE{16 * 2, 16 * 2, 16 * 1, 16 * 1};
 const SDL_FRect FENCE_H{16 * 1, 16 * 2, 16 * 1, 16 * 1};
-
-const SDL_FRect TORCH{16 * 0, 16 * 9, 16 * 1, 16 * 1};
 
 const SDL_FRect HEART_FULL{16 * 0, 16 * 0, 16 * 1, 16 * 1};
 const SDL_FRect HEART_HALF{16 * 1, 16 * 0, 16 * 1, 16 * 1};

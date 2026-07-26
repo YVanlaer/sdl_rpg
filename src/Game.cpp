@@ -393,7 +393,7 @@ void Game::talkToSmith() {
             "Bram the Blacksmith",
             std::vector<std::string>{
                 "The golden slime still lives. Take the east path, then head north at the "
-                "torch-lined fork.",
+                "north fork.",
                 "It hits hard - bring potions. Grub the merchant sells them at the plaza stall.",
             },
             portrait));

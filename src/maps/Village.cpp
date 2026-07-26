@@ -47,7 +47,7 @@ std::unique_ptr<Map> buildVillage(const Assets& assets) {
 
     /* ---------- border tree wall (west opening to the farm) ---------- */
     const World::BorderGap westGap{3, 66, 67};
-    world.addBorder(assets.get("pines"), &westGap);
+    world.addBorder(assets, &westGap);
 
     /* ---------- village ---------- */
     {
@@ -71,19 +71,10 @@ std::unique_ptr<Map> buildVillage(const Assets& assets) {
     world.addFenceRect(assets.get("fence"), 9, 74, 15, 79, 15, 76);
     const SDL_FRect pen{9 * TILE, 74 * TILE, 6 * TILE, 5 * TILE};
 
-    // torches along the main path
-    const int torchPos[][2] = {{32, 64}, {42, 68}, {52, 64}, {62, 68}, {72, 64}, {84, 68},
-                               {98, 64}, {100, 40}, {100, 24}, {74, 52}, {4, 64}};
-    for (const auto& [tx, ty] : torchPos) {
-        const SDL_FRect c{tx * TILE + 5.0f, ty * TILE + 10.0f, 6, 6};
-        world.addObject(assets.get("props"), &TORCH, tx * TILE, ty * TILE, 16, 16, &c);
-    }
-
     /* ---------- forest trees ---------- */
     const auto onPath = [&](int x, int y) {
         return world.inMap(x, y) && world.ground[world.gi(x, y)] == G_DIRT;
     };
-    const SDL_FRect* treeRects[] = {&PINE1, &PINE2};
     for (int y = 5; y <= 81; ++y) {
         for (int x = 55; x <= 113; ++x) {
             if (onPath(x, y) || onPath(x, y + 1) || onPath(x + 1, y)) continue;
@@ -100,10 +91,11 @@ std::unique_ptr<Map> buildVillage(const Assets& assets) {
                 const float px = x * TILE + std::floor(h2(x, y * 9) * 8) - 10.0f;
                 const float py = y * TILE - 26.0f + std::floor(h2(x * 4, y) * 10);
                 if (rr < 0.6) {
-                    world.addTree(assets.get("pines"), treeRects[rr < 0.3 ? 0 : 1], px, py, 36, 60);
+                    const TreeType& pine = rr < 0.3 ? treeTypes::PINE1 : treeTypes::PINE2;
+                    world.addTree(assets, pine, px, py);
                 } else {
-                    const SDL_FRect* mrect = rr < 0.8 ? &MAPLE_GREEN : &MAPLE_ORANGE;
-                    world.addTree(assets.get("maples"), mrect, px, py - 4, 36, 70);
+                    const TreeType& maple = rr < 0.8 ? treeTypes::MAPLE_GREEN : treeTypes::MAPLE_ORANGE;
+                    world.addTree(assets, maple, px, py - 4);
                 }
             }
         }
