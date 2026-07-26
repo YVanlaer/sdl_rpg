@@ -59,14 +59,14 @@ CharDef makeHeroDef(const Assets& assets, const HeroDef& d) {
 
 // "E" interact hint bubble above NPCs and chests.
 void drawBubble(SDL_Renderer* r, const Game& game, float x, float y) {
-    const SDL_FRect box{std::round(x - game.cam.x) - 6, std::round(y - game.cam.y) - 12, 12, 12};
+    const SDL_FRect box{std::round(x - game.cam.x) - 7, std::round(y - game.cam.y) - 12, 13, 13};
     const SDL_Color fill = hexColor(0xfff8e8);
     const SDL_Color border = hexColor(0x5a3d2b);
     SDL_SetRenderDrawColor(r, fill.r, fill.g, fill.b, 255);
     SDL_RenderFillRect(r, &box);
     SDL_SetRenderDrawColor(r, border.r, border.g, border.b, 255);
     SDL_RenderRect(r, &box);
-    game.font.draw(r, "E", box.x + 6, box.y + 2, border);
+    game.font.draw(r, "E", box.x + 3, box.y + 3, border);
 }
 }  // namespace
 

@@ -143,8 +143,8 @@ const SDL_FRect FENCE_H{16 * 1, 16 * 2, 16 * 1, 16 * 1};
 const SDL_FRect TORCH{16 * 0, 16 * 9, 16 * 1, 16 * 1};
 
 const SDL_FRect HEART_FULL{16 * 0, 16 * 0, 16 * 1, 16 * 1};
-const SDL_FRect HEART_HALF{16 * 2, 16 * 0, 16 * 1, 16 * 1};
-const SDL_FRect HEART_EMPTY{16 * 0, 16 * 1, 16 * 1, 16 * 1};
+const SDL_FRect HEART_HALF{16 * 1, 16 * 0, 16 * 1, 16 * 1};
+const SDL_FRect HEART_EMPTY{16 * 2, 16 * 0, 16 * 1, 16 * 1};
 const SDL_FRect COIN{16 * 0, 16 * 0, 16 * 1, 16 * 1};
 
 const SDL_FPoint STONES[8] = {{16 * 0, 16 * 0},  {16 * 1, 16 * 0},  {16 * 2, 16 * 0},  {16 * 3, 16 * 0},
