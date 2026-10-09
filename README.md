@@ -3,9 +3,6 @@
 A 2D top-down action RPG built with C++17 + SDL3, using the
 Farm RPG Tiny Asset Pack (art: EmanuelleDev, emanuelledev.itch.io).
 
-This is a port of the vanilla JS/HTML5 canvas version found at
-`~/Documents/vibe/rpg_game`.
-
 ## Prerequisites
 
 - A C++ compiler (like g++ or Clang)
